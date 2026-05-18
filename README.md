@@ -1,156 +1,226 @@
+# Browser Automation Agent
 
+> Give it a task in plain English — it opens a browser, thinks, acts, and returns results. Automatically.
 
-**Browser Automation Agent**
+---
 
-Give it a task in plain English it opens a browser, thinks, acts, and returns results. Automatically.
+## How It Works — LangGraph Flow
 
-# lang graph Flow 
+```
+START → Supervisor → Planner → Browser Action → Vision → Decision
+                                      ↑_______________|
+                                      (loop until done)
+                                            ↓
+                                       Extractor → Reflector → END
+```
 
-**1. START****
-User gives input
-Example: “Search YouTube for Movie”
-**2. Supervisor Node**
-Understands what the user wants
-Converts it into a clear task
-Output:
-“User wants to search YouTube”
+### 1. Supervisor Node
+- Understands what the user wants
+- Converts vague input into a clear task
+- Example: `"hey search rebal movie"` → `"Search YouTube for Rebal movie trailer"`
 
-**3. Planner Node**
-Breaks the task into steps
-Example steps:
-1. Open YouTube
-2. Click search bar
-3. Type “Inception”
-4. Press Enter
-   
-**4. Browser Action Node**
+### 2. Planner Node
+- Breaks the task into browser steps
+- Example:
+  1. Navigate to `https://www.youtube.com/results?search_query=rebal+movie`
+  2. Click first video result
 
-● Actually performs the step (like a human)
-Example:
-● Opens website
-● Clicks
-● Types
+### 3. Browser Action Node
+- Actually performs the step like a human
+- Can: navigate, click, type, scroll, press keys
 
-**5. Vision Node**
-● Takes screenshot after action
-● Checks what happened using AI
-Example:
-“YouTube homepage loaded successfully”
+### 4. Vision Node
+- Takes a screenshot after each action
+- Uses AI to check what happened
+- Example: `"YouTube search results loaded successfully"`
 
-**6. Decision Node (Brain of system)**
+### 5. Decision Node *(Brain of the system)*
+- **Case 1 — Success:** Move to next step
+- **Case 2 — Failed:** Retry same step
+- **Case 3 — All steps done:** Move to Extractor
 
-Now it decides what to do next:
-Case 1: Everything is correct
-Go to next step
-Case 2: Something failed
-Retry same step
-back to Browser Action
-Case 3: All steps done
-Move to extraction
-go to Extractor Node
+### 6. Extractor Node
+- Scrapes the final data from the page
+- Extracts: video titles, links, URLs
 
-**7. Extractor Node**
+### 7. Reflector Node
+- Scores how well the task was completed (1–10)
+- Saves result to database
+- Example: `"Result quality = 9/10"`
 
-● Collects final data
-Example:
-● Video titles
-● Links
-● Views
+---
 
-**8. Reflector Node**
+## Tech Stack
 
-● Checks how good the result is (score 1–10)
-Example:
-“Result quality = 9/10”
+| Tool | Purpose |
+|------|---------|
+| LangGraph | Agent workflow & node pipeline |
+| LangChain | LLM integration & chains |
+| Groq AI | Fast LLM (llama-3.3-70b) |
+| Playwright | Browser automation (Chromium) |
+| FastAPI | REST API |
+| MongoDB Atlas | Data persistence |
 
-**#File Structure**
+---
 
+## Quick Start
+
+**1. Clone the repo**
+```bash
+git clone https://github.com/Maheshmk18/browser_agent.git
+cd browser_agent/browser-agent
+```
+
+**2. Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+**3. Install browser**
+```bash
+playwright install chromium
+```
+
+**4. Create `.env` file**
+```env
+MONGO_URI=your_mongodb_atlas_url
+MONGO_DB_NAME=browser_agent
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+BROWSER_HEADLESS=false
+BROWSER_TIMEOUT_MS=30000
+BROWSER_KEEP_OPEN_SECONDS=60
+MAX_RETRIES=3
+```
+
+**5. Run the server**
+```bash
+python run.py
+```
+
+Server starts at `http://localhost:8000`
+
+---
+
+## API Usage
+
+**Start a task**
+```http
+POST http://localhost:8000/agent/run
+Content-Type: application/json
+
+{
+  "input": "Search YouTube for Rebal movie trailer and get the top 5 video titles"
+}
+```
+
+**Check status**
+```http
+GET http://localhost:8000/agent/tasks/{task_id}/status
+```
+
+**Get results**
+```http
+GET http://localhost:8000/agent/tasks/{task_id}/result
+```
+
+**Get full session steps**
+```http
+GET http://localhost:8000/agent/tasks/{task_id}/session
+```
+
+**Get error details**
+```http
+GET http://localhost:8000/agent/tasks/{task_id}/error
+```
+
+**Swagger UI**
+```
+http://localhost:8000/docs
+```
+
+---
+
+## File Structure
+
+```
 browser-agent/
 │
-├── run.py                        ← START HERE — launches the server
-├── .env                          ← all secret keys & settings
+├── run.py                        <- START HERE - launches the server
+├── .env                          <- all secret keys & settings (never commit this)
 │
 ├── config/
-│   └── settings.py               ← reads .env and makes settings available everywhere
+│   └── settings.py               <- reads .env and makes settings available everywhere
 │
 ├── agent/
-│   └── browser_agent.py          ← BRAIN — runs the full agent (opens browser, runs graph, saves results)
+│   └── browser_agent.py          <- BRAIN - runs the full agent pipeline
 │
-├── api/                          ← everything the outside world talks to
-│   ├── main.py                   ← creates the FastAPI app
+├── api/                          <- everything the outside world talks to
+│   ├── main.py                   <- creates the FastAPI app
 │   ├── routers/
-│   │   └── agent.py              ← defines all API endpoints (POST /run, GET /status etc.)
+│   │   └── agent.py              <- all API endpoints
 │   ├── controllers/
-│   │   └── agent_controller.py   ← receives API requests, starts agent in background
+│   │   └── agent_controller.py   <- receives requests, starts agent in background
 │   └── schemas/
-│       └── agent.py              ← defines request/response shapes (what JSON looks like)
+│       └── agent.py              <- request/response JSON shapes
 │
-├── browser/                      ← everything about controlling the browser
-│   ├── engine.py                 ← opens & closes Chromium browser
-│   ├── actions.py                ← does things in browser (click, type, navigate, scroll)
-│   └── screenshot.py             ← takes screenshots of the browser
+├── browser/                      <- controls the real browser
+│   ├── engine.py                 <- opens & closes Chromium
+│   ├── actions.py                <- click, type, navigate, scroll
+│   └── screenshot.py             <- captures screenshots
 │
-├── graph/                        ← the agent's step-by-step thinking pipeline
-│   ├── state.py                  ← shared memory between all nodes (task, steps, results)
-│   ├── builder.py                ← connects all nodes together into a flow
+├── graph/                        <- LangGraph pipeline
+│   ├── state.py                  <- shared state between all nodes
+│   ├── builder.py                <- connects nodes into a flow
 │   └── nodes/
-│       ├── supervisor.py         ← understands & clarifies the task
-│       ├── planner.py            ← creates step-by-step action plan
-│       ├── browser_action.py     ← executes one browser step (click/type/navigate)
-│       ├── vision.py             ← looks at screenshot, checks if step succeeded
-│       ├── decision.py           ← decides: next step / retry / done
-│       ├── extractor.py          ← scrapes final results from the page
-│       └── reflector.py          ← scores how well the task was completed
+│       ├── supervisor.py         <- understands & clarifies task
+│       ├── planner.py            <- creates action plan
+│       ├── browser_action.py     <- executes one browser step
+│       ├── vision.py             <- checks screenshot with AI
+│       ├── decision.py           <- next step / retry / done
+│       ├── extractor.py          <- scrapes results from page
+│       └── reflector.py          <- scores & saves results
 │
-├── llm/                          ← everything about AI / language model
-│   ├── client.py                 ← connects to Groq AI
-│   ├── prompts.py                ← all instructions given to the AI
-│   ├── chains.py                 ← runs AI calls and parses responses
-│   └── embeddings.py            ← converts text to vectors (for memory)
+├── llm/                          <- AI / LLM layer
+│   ├── client.py                 <- connects to Groq AI
+│   ├── prompts.py                <- all AI instructions
+│   ├── chains.py                 <- runs AI calls & parses responses
+│   └── embeddings.py             <- text to vectors (for memory)
 │
-├── db/mongo/                     ← everything about the database
-│   ├── client.py                 ← connects to MongoDB
-│   ├── models.py                 ← defines what data looks like (Task, Session, Result)
-│   └── repositories/
-│       ├── task_repo.py          ← save/get tasks from DB
-│       ├── session_repo.py       ← save/get sessions & steps from DB
-│       └── result_repo.py        ← save/get results from DB
-│
+└── db/mongo/                     <- database layer
+    ├── client.py                 <- MongoDB connection
+    ├── models.py                 <- Task, Session, Result models
+    └── repositories/
+        ├── task_repo.py          <- save/get tasks
+        ├── session_repo.py       <- save/get sessions & steps
+        └── result_repo.py        <- save/get results
+```
 
-# API  Usage 
-# Start a task
-POST http://localhost:8000/agent/run
-{ "input": "Search YouTube for Rebal movie trailer" }
+---
 
-# Check status
-GET http://localhost:8000/agent/tasks/{task_id}/status
+## Example Result
 
-# Get results
-GET http://localhost:8000/agent/tasks/{task_id}/result
+```json
+{
+  "extracted_data": {
+    "page_title": "rebal movie - YouTube",
+    "videos": [
+      { "title": "Rebal Official Trailer", "url": "https://www.youtube.com/watch?v=abc123" },
+      { "title": "Rebal Full Movie 2024", "url": "https://www.youtube.com/watch?v=xyz456" }
+    ]
+  },
+  "score": 9,
+  "metrics": {
+    "total_steps": 2,
+    "retries": 0,
+    "duration_ms": 45000
+  }
+}
+```
 
+---
 
-**Tech Stack**
+## Author
 
-**Tool**	           **Purpose**
-LangGraph	      Agent workflow & node pipeline
-LangChain	      LLM integration & chains
-Groq AI         Fast LLM inference
-Playwright	    Browser automation
-FastAPI	        REST API
-MongoDB	        Data persistence
-
-**Quick Start**
-
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Install browser
-playwright install chromium
-
-# 3. Add your keys to .env
-GROQ_API_KEY=your_key
-MONGO_URI=your_mongodb_url
-
-# 4. Run
-python -m uvicorn api.main:app --reload   
-
+**Mahesh** — [GitHub](https://github.com/Maheshmk18) · [LinkedIn](https://linkedin.com/in/maheshmk18)
