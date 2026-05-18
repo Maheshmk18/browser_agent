@@ -96,11 +96,11 @@ MAX_RETRIES=3
 
 **5. Run the server**
 ```bash
-# Browser Automation Agent
+python -m uvicorn api.main:app
+```
 
-> Give it a task in plain English — it opens a browser, thinks, acts, and returns results. Automatically.
+Server starts at `http://localhost:8000`
 
----
 
 ## How It Works — LangGraph Flow
 
