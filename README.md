@@ -96,57 +96,7 @@ MAX_RETRIES=3
 
 **5. Run the server**
 ```bash
-python -m uvicorn api.main:app
-```
-
-Server starts at `http://localhost:8000`
-
-## Tech Stack
-
-| Tool | Purpose |
-|------|---------|
-| LangGraph | Agent workflow & node pipeline |
-| LangChain | LLM integration & chains |
-| Groq AI | Fast LLM (llama-3.3-70b) |
-| Playwright | Browser automation (Chromium) |
-| FastAPI | REST API |
-| MongoDB Atlas | Data persistence |
-
----
-
-## Quick Start
-
-**1. Clone the repo**
-```bash
-git clone https://github.com/Maheshmk18/browser_agent.git
-cd browser_agent/browser-agent
-```
-
-**2. Install dependencies**
-```bash
-pip install -r requirements.txt
-```
-
-**3. Install browser**
-```bash
-playwright install chromium
-```
-
-**4. Create `.env` file**
-```env
-MONGO_URI=your_mongodb_atlas_url
-MONGO_DB_NAME=browser_agent
-GROQ_API_KEY=your_groq_api_key
-GROQ_MODEL=llama-3.3-70b-versatile
-GROQ_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-BROWSER_HEADLESS=false
-BROWSER_TIMEOUT_MS=30000
-MAX_RETRIES=3
-```
-
-**5. Run the server**
-```bash
-python -m uvicorn api.main:app 
+python run.py
 ```
 
 Server starts at `http://localhost:8000`
@@ -274,9 +224,3 @@ browser-agent/
 ## Author
 
 **Mahesh** — [GitHub](https://github.com/Maheshmk18) · [LinkedIn](https://linkedin.com/in/maheshmk18)
-
-```
-
----
-
-
