@@ -1,36 +1,28 @@
 from __future__ import annotations
 
 from graph.state import AgentState
-from llm.chains import run_decision
 
 
 async def run(state: AgentState) -> dict:
-    vision = state.get("last_vision") or {}
     plan = state.get("action_plan", [])
+    current_step = state.get("current_step", 0)
+    retry_count = state.get("retry_count", 0)
+    max_retries = state.get("max_retries", 3)
+    vision = state.get("last_vision") or {}
+    success = vision.get("success", True)
+    total_steps = len(plan)
 
-    result = await run_decision(
-        task=state["clarified_task"],
-        current_step=state["current_step"],
-        total_steps=len(plan),
-        last_action=plan[state["current_step"]].get("description", "") if plan else "",
-        observation=vision.get("observation", ""),
-        success=vision.get("success", False),
-        retry_count=state["retry_count"],
-        max_retries=state["max_retries"],
-    )
+    # Completed all steps → extract
+    if current_step >= total_steps - 1:
+        return {"last_decision": "extract", "current_step": current_step, "retry_count": retry_count}
 
-    decision = result.get("decision", "extract")
-    new_step = state["current_step"]
-    new_retry = state["retry_count"]
+    # Last step failed and retries left → retry
+    if not success and retry_count < max_retries:
+        return {"last_decision": "retry", "current_step": current_step, "retry_count": retry_count + 1}
 
-    if decision == "next_action":
-        new_step = state["current_step"] + 1
-        new_retry = 0
-    elif decision == "retry":
-        new_retry = state["retry_count"] + 1
+    # Last step failed and no retries left → extract anyway
+    if not success and retry_count >= max_retries:
+        return {"last_decision": "extract", "current_step": current_step, "retry_count": retry_count}
 
-    return {
-        "last_decision": decision,
-        "current_step": new_step,
-        "retry_count": new_retry,
-    }
+    # Last step succeeded → move to next step
+    return {"last_decision": "next_action", "current_step": current_step + 1, "retry_count": 0}

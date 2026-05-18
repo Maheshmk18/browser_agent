@@ -41,7 +41,7 @@ def make_reflector_node(
                 retries=total_retries,
                 duration_ms=duration_ms,
             ),
-            score=reflection.get("score", 5),
+            score=max(1, min(10, reflection.get("score", 5))),
             status=ResultStatus.COMPLETED,
         )
         await result_repo.create(result)

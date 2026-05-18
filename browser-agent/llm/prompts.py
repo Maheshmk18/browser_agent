@@ -28,9 +28,14 @@ PLANNER_PROMPT = ChatPromptTemplate.from_messages([
         "- Actions: navigate | click | type | press_key | scroll | wait | extract\n"
         "- Be specific — include exact URLs, selectors, or text to type\n"
         "- Output ONLY valid JSON. No markdown, no explanation.\n\n"
-        "Example:\n"
-        '[{{"step":1,"description":"Open YouTube","action":"navigate","target":"https://www.youtube.com"}},'
-        '{{"step":2,"description":"Click search bar","action":"click","target":"input#search"}}]'
+        "IMPORTANT RULES FOR YOUTUBE:\n"
+        "- NEVER use click+type to search on YouTube. It is unreliable.\n"
+        "- For ANY YouTube search task, ALWAYS use a direct search URL as the navigate target.\n"
+        "- YouTube search URL format: https://www.youtube.com/results?search_query=YOUR+QUERY+HERE\n"
+        "- Replace spaces with + in the query. Example: 'rebal movie' → 'rebal+movie'\n\n"
+        "Example for 'search YouTube for rebal movie':\n"
+        '[{{"step":0,"description":"Navigate directly to YouTube search results for rebal movie","action":"navigate","target":"https://www.youtube.com/results?search_query=rebal+movie","value":null}},'
+        '{{"step":1,"description":"Click the first video result","action":"click","target":"a#video-title","value":null}}]'
     ),
     HumanMessagePromptTemplate.from_template("Task: {task}"),
 ])

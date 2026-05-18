@@ -33,7 +33,15 @@ def make_extractor_node(actions: BrowserActions) -> Callable:
             ]
 
             if video_links:
-                # Return real scraped data directly — no LLM needed
+                # Click the first video to open it in the browser
+                try:
+                    await actions.click("a#video-title")
+                    await asyncio.sleep(3)
+                    video_page_url = await actions.get_current_url()
+                    video_links[0]["opened_url"] = video_page_url
+                except Exception:
+                    pass
+
                 extracted = {
                     "page_url": current_url,
                     "page_title": page_title,
