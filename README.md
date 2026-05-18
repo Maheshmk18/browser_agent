@@ -101,53 +101,6 @@ python -m uvicorn api.main:app
 
 Server starts at `http://localhost:8000`
 
-
-## How It Works — LangGraph Flow
-
-```
-START → Supervisor → Planner → Browser Action → Vision → Decision
-                                      ↑_______________|
-                                      (loop until done)
-                                            ↓
-                                       Extractor → Reflector → END
-```
-
-### 1. Supervisor Node
-- Understands what the user wants
-- Converts vague input into a clear task
-- Example: `"hey search rebal movie"` → `"Search YouTube for Rebal movie trailer"`
-
-### 2. Planner Node
-- Breaks the task into browser steps
-- Example:
-  1. Navigate to `https://www.youtube.com/results?search_query=rebal+movie`
-  2. Click first video result
-
-### 3. Browser Action Node
-- Actually performs the step like a human
-- Can: navigate, click, type, scroll, press keys
-
-### 4. Vision Node
-- Takes a screenshot after each action
-- Uses AI to check what happened
-- Example: `"YouTube search results loaded successfully"`
-
-### 5. Decision Node *(Brain of the system)*
-- **Case 1 — Success:** Move to next step
-- **Case 2 — Failed:** Retry same step
-- **Case 3 — All steps done:** Move to Extractor
-
-### 6. Extractor Node
-- Scrapes the final data from the page
-- Extracts: video titles, links, URLs
-
-### 7. Reflector Node
-- Scores how well the task was completed (1–10)
-- Saves result to database
-- Example: `"Result quality = 9/10"`
-
----
-
 ## Tech Stack
 
 | Tool | Purpose |
